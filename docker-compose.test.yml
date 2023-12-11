@@ -1,0 +1,25 @@
+version: '3.9'
+services:
+  redis:
+    image: redis
+    hostname: redis
+    restart: always
+    ports:
+      - "6379"
+    command: redis-server --loglevel warning
+    healthcheck:
+      test: redis-server --version
+  web:
+    depends_on:
+      redis:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test
+    healthcheck:
+      test: curl -s http://localhost:8000/api/health_check/?raw= | grep status
+    volumes:
+      - .git:/opt/git
+    environment:
+      BRANCH: ${TEST_BRANCH}

@@ -1,0 +1,16 @@
+.docker
+.github
+.git
+.gitignore
+.dockerignore
+.deploy
+docker-compose.yml
+Dockerfile
+static
+media
+*.pyc
+*.sqlite3
+*.md
+local_settings.py
+.steps/
+geckodriver.log

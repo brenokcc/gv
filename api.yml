@@ -1,0 +1,134 @@
+api:
+  app: true
+  lang: pt-br
+  title: Sloth Framework
+  subtitle: Take your time!
+  icon: /api/static/images/sloth2.svg
+  logo: /api/static/images/sloth.svg
+  footer:
+    logo: /api/static/images/sloth2.svg
+    version: 1.0.1
+  theme:
+    primary: 1351b4
+    secondary: 071e41
+    auxiliary: 2670e8
+    highlight: 0c326f
+    info: d4e5ff
+    success: 1351b4
+    warning: fff5c2
+    danger: e52207
+    radius: 5px
+  index:
+  dashboard:
+  groups:
+    adm: Administrador
+    consultor: Consultor
+    consultante: Consultante
+    especialista: Especialista
+  models:
+    auth.user:
+      prefix: users
+      icon: user-pen
+      filters: date_joined__gte, is_superuser, username
+      ordering: username
+      endpoints:
+        add:
+          fieldsets:
+            dados_gerais: username is_active, first_name last_name
+            contato: email
+        list:
+          fields: id, username, email, api.endpoints.userroles
+          actions: add, view, edit, delete, api.endpoints.changepassword, api.endpoints.changepasswords
+          extends:
+            active:
+              fields: id, username
+            inactive:
+        view:
+          fieldsets:
+            dados_gerais: username get_full_name
+            dados_acesso:
+              actions: api.endpoints.verifypassword, api.endpoints.changepassword
+              fields: date_joined is_active, api.endpoints.userroles
+            contato: email
+    api.role:
+      prefix: roles
+      endpoints:
+        list:
+          fields: id, name, get_scope_value, active
+          actions: view, edit
+    gv.tipocontrato:
+    gv.prioridade:
+    gv.assunto:
+      icon: file-circle-plus
+      endpoints:
+        list: descricao, get_qtd_topicos
+        view:
+          fieldsets:
+            dados_gerais: descricao
+            topicos:
+              fields: descricao
+              related_field: assunto
+    gv.topico:
+    gv.especialista:
+      icon: user-check
+      roles:
+        especialista:
+          username: cpf
+    gv.cliente:
+      icon: contact-book
+      endpoints:
+        list: cpf_cnpj, nome, tipo_contrato, cpf_responsavel, nome_responsavel, cargo_responsavel
+        add:
+          fieldsets:
+            dados_gerais: cpf_cnpj nome, tipo_contrato
+            contato: endereco telefone
+            responsavel: cpf_responsavel nome_responsavel cargo_responsavel
+        view:
+          fieldsets:
+            dados_gerais: cpf_cnpj nome
+            contato: endereco telefone
+            responsavel: cpf_responsavel nome_responsavel cargo_responsavel
+            consultantes:
+              actions: edit, delete
+              fields: cpf, nome
+              fieldsets: cpf, nome
+              related_field: cliente
+            mensalidades:
+              actions: edit, delete, gv.endpoints.registrarpagamento
+              related_field: cliente
+              fields: valor, data_vencimento, data_pagamento
+              fieldsets: valor, data_vencimento
+    gv.mensalidade:
+    gv.consultante:
+      roles:
+        consultante:
+          username: cpf
+    gv.consulta:
+      icon: search
+      requires:
+        consultante: consultante__cpf
+        especialista:
+      endpoints:
+        list:
+          subsets:
+            aguardando_especialista:
+            aguardando_resposta:
+            aguardando_envio:
+            finalizadas:
+          fields: topico, pergunta, data_pergunta, especialista, data_resposta
+        add:
+          fields: consultante, topico prioridade, pergunta
+          hide:
+            consultante: cpf
+        view:
+          fieldsets:
+            get_passos:
+            dados_gerais:
+              actions: gv.endpoints.assumirconsulta
+              fields: consultante, topico prioridade
+            inteligencia_artificial:
+              actions: gv.endpoints.consultarinteligenciaartificial
+              fields: pergunta_ia, resposta_ia
+            detalhamento:
+              actions: gv.endpoints.editarresposta, gv.endpoints.enviarresposta
+              fields: data_pergunta especialista data_resposta, pergunta, resposta, observacao
