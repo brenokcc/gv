@@ -1,12 +1,11 @@
 api:
   app: true
   lang: pt-br
-  title: Sloth Framework
-  subtitle: Take your time!
-  icon: /api/static/images/sloth2.svg
-  logo: /api/static/images/sloth.svg
+  title: AnalisaRN
+  subtitle: Consultoria e Assessoria
+  icon: /api/static/images/analisa-logo.png
+  logo: /api/static/images/analisa-logo.png
   footer:
-    logo: /api/static/images/sloth2.svg
     version: 1.0.1
   theme:
     primary: 1351b4
