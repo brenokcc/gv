@@ -26,6 +26,11 @@ api:
     consultante: Consultante
     especialista: Especialista
   models:
+    api.pushsubscription:
+      endpoints:
+        list:
+          fields: user, device
+          actions: api.endpoints.pushnotification, delete
     auth.user:
       prefix: users
       icon: user-pen
