@@ -3,6 +3,7 @@ import datetime
 from api import endpoints
 import os
 from api.components import Steps
+from api.models import PushSubscription
 import openai
 
 
@@ -17,6 +18,9 @@ class AssumirConsulta(endpoints.Endpoint):
         self.instance.especialista = self.objects('gv.especialista').get(cpf=self.user.username)
         self.instance.save()
         self.notify()
+        texto = 'Seu questionamento sobre "{}" está sendo analisado.'.format(self.instance.topico)
+        for subscription in PushSubscription.objects.filter(user__username=self.instance.consultante.cpf):
+            subscription.notify(texto)
 
     def check_permission(self):
         return self.instance.especialista_id is None and self.check_roles('especialista')
@@ -66,12 +70,15 @@ class EnviarResposta(endpoints.Endpoint):
         title = 'Enviar Resposta'
         target = 'instance'
         model = 'gv.consulta'
-        fields = 'observacao',
+        fields = 'observacao', 'resposta'
 
     def check_permission(self):
         return self.instance.resposta and self.instance.data_resposta is None and self.check_roles('especialista')
 
     def post(self):
+        texto = 'Seu questionamento sobre "{}" foi respondido.'.format(self.instance.topico)
+        for subscription in PushSubscription.objects.filter(user__username=self.instance.consultante.cpf):
+            subscription.notify(texto)
         self.instance.data_resposta = datetime.datetime.now()
         super().post()
 

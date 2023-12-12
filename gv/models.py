@@ -1,5 +1,6 @@
 from django.db import models
 from api.components import Badge, Steps
+from api.models import PushSubscription
 
 
 class TipoContrato(models.Model):
@@ -160,6 +161,10 @@ class Consulta(models.Model):
         if self.resposta is None and self.resposta_ia:
             self.resposta = self.resposta_ia
         super().save(*args, **kwargs)
+        cpfs = Especialista.objects.filter(assuntos=self.topico.assunto).values_list('cpf', flat=True)
+        texto = 'Nova pergunta sobre "{}" cadastrada pelo cliente "{}".'.format(self.topico, self.consultante.cliente)
+        for subscription in PushSubscription.objects.filter(user__username__in=cpfs):
+            subscription.notify(texto)
 
 
 class Mensalidade(models.Model):
