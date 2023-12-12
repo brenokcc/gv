@@ -156,15 +156,17 @@ class Consulta(models.Model):
         return steps
 
     def save(self, *args, **kwargs):
+        pk = self.pk
         if self.pergunta_ia is None:
             self.pergunta_ia = self.pergunta
         if self.resposta is None and self.resposta_ia:
             self.resposta = self.resposta_ia
         super().save(*args, **kwargs)
-        cpfs = Especialista.objects.filter(assuntos=self.topico.assunto).values_list('cpf', flat=True)
-        texto = 'Nova pergunta sobre "{}" cadastrada pelo cliente "{}".'.format(self.topico, self.consultante.cliente)
-        for subscription in PushSubscription.objects.filter(user__username__in=cpfs):
-            subscription.notify(texto)
+        if pk is None:
+            cpfs = Especialista.objects.filter(assuntos=self.topico.assunto).values_list('cpf', flat=True)
+            texto = 'Nova pergunta sobre "{}" cadastrada pelo cliente "{}".'.format(self.topico, self.consultante.cliente)
+            for subscription in PushSubscription.objects.filter(user__username__in=cpfs):
+                subscription.notify(texto)
 
 
 class Mensalidade(models.Model):
