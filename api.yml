@@ -70,9 +70,19 @@ api:
           fieldsets:
             dados_gerais: descricao
             topicos:
+              actions: view, edit, delete
               fields: descricao
               related_field: assunto
     gv.topico:
+      endpoints:
+        view:
+          fieldsets:
+            dados_gerais: descricao
+            conteudos:
+              fields: descricao
+              fieldsets: descricao, texto
+              related_field: topico
+    gv.conteudo:
     gv.especialista:
       icon: user-check
       roles:

@@ -55,6 +55,19 @@ class Topico(models.Model):
         verbose_name_plural = 'Tópicos'
 
     def __str__(self):
+        return '{} - {}'.format(self.assunto, self.descricao)
+
+
+class Conteudo(models.Model):
+    topico = models.ForeignKey(Topico, verbose_name='Tópico', related_name='conteudos')
+    descricao = models.CharField('Descrição')
+    texto = models.TextField('Texto')
+
+    class Meta:
+        verbose_name = 'Conteúdo'
+        verbose_name_plural = 'Conteúdos'
+
+    def __str__(self):
         return self.descricao
 
 
