@@ -2,9 +2,28 @@ import datetime
 
 from api import endpoints
 import os
-from api.components import Steps
+from api.components import Steps, WebConf
 from api.models import PushSubscription
 import openai
+
+
+class VideoChamada(endpoints.Endpoint):
+
+    class Meta:
+        title = 'Video Chamada'
+        target = 'instance'
+        modal = False
+
+    def get(self):
+        if self.user.username == self.instance.consultante.cpf:
+            receiver = self.instance.especialista.cpf
+        if self.user.username == self.instance.especialista.cpf:
+            receiver = self.instance.consultante.cpf
+        return WebConf(self.user.username, receiver)
+
+    def check_permission(self):
+        usernames = [self.instance.consultante.cpf, self.instance.especialista.cpf]
+        return self.instance.especialista and self.user.username in usernames
 
 
 class AssumirConsulta(endpoints.Endpoint):

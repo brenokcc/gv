@@ -135,6 +135,7 @@ api:
           hide:
             consultante: cpf
         view:
+          actions: gv.endpoints.videochamada
           fieldsets:
             get_passos:
             dados_gerais:
