@@ -10,6 +10,7 @@ import openai
 class VideoChamada(endpoints.Endpoint):
 
     class Meta:
+        icon = 'video'
         title = 'Video Chamada'
         target = 'instance'
         modal = False
