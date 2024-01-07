@@ -1,4 +1,5 @@
 import os
+import time
 from openai import OpenAI
 from django.db import models
 from api.components import Badge, Steps
@@ -71,8 +72,23 @@ class Topico(models.Model):
                 tools=[{"type": "retrieval"}],
                 model="gpt-3.5-turbo-1106"
             )
-            self.codigo_openai = assistant.id
-        
+            Topico.objects.filter(pk=self.pk).update(codigo_openai=assistant.id)
+
+    def perguntar_inteligencia_artificial(self, pergunta):
+        client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
+        assistant = client.beta.assistants.retrieve(self.codigo_openai)
+        thread = client.beta.threads.create()
+        file_ids = list(self.arquivos.values_list('codigo_openai', flat=True))
+        message = client.beta.threads.messages.create(
+            thread_id=thread.id, role="user", content=pergunta, file_ids=file_ids
+        )
+        run = client.beta.threads.runs.create(thread_id=thread.id, assistant_id=assistant.id)
+        while run.status != 'completed':
+            time.sleep(1)
+            run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+        messages = client.beta.threads.messages.list(thread_id=thread.id)
+        breakpoint()
+        return messages.data[0].content[0].text.value.replace('【9†source】', '')
 
 
 class Arquivo(models.Model):
@@ -94,8 +110,7 @@ class Arquivo(models.Model):
                 assistant_file = client.beta.assistants.files.create(
                     assistant_id=self.topico.codigo_openai, file_id=uploaded_file.id
                 )
-                self.codigo_openai = assistant_file.id
-                super().save(*args, **kwargs)
+                Arquivo.objects.filter(pk=self.pk).update(codigo_openai=assistant_file.id)
 
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
@@ -107,17 +122,22 @@ class Arquivo(models.Model):
             client.files.delete(self.codigo_openai)
 
 
-class Conteudo(models.Model):
-    topico = models.ForeignKey(Topico, verbose_name='Tópico', related_name='conteudos')
-    descricao = models.CharField('Descrição')
-    texto = models.TextField('Texto')
+class PerguntaFrequente(models.Model):
+    topico = models.ForeignKey(Topico, verbose_name='Tópico', related_name='perguntas_frequentes')
+    pergunta = models.CharField('Pergunta')
+    resposta = models.TextField('Resposta', blank=True)
 
     class Meta:
-        verbose_name = 'Conteúdo'
-        verbose_name_plural = 'Conteúdos'
+        verbose_name = 'Pergunta Frequente'
+        verbose_name_plural = 'Perguntas Frequentes'
 
     def __str__(self):
         return self.descricao
+    
+    def save(self, *args, **kwargs):
+        if not self.resposta and self.topico.arquivos.exists():
+            self.resposta = self.topico.perguntar_inteligencia_artificial(self.pergunta)
+        super().save(*args, **kwargs)
 
 
 class Especialista(models.Model):
@@ -182,10 +202,10 @@ class ConsultaQuerySet(models.QuerySet):
         return self.filter(especialista__isnull=True)
 
     def aguardando_resposta(self):
-        return self.filter(resposta__isnull=True)
+        return self.filter(especialista__isnull=False, resposta__isnull=True)
 
     def aguardando_envio(self):
-        return self.filter(data_resposta__isnull=True)
+        return self.filter(resposta__isnull=False, data_resposta__isnull=True)
 
     def finalizadas(self):
         return self.filter(data_resposta__isnull=False)

@@ -65,13 +65,13 @@ api:
     gv.assunto:
       icon: file-circle-plus
       endpoints:
-        list: descricao, get_qtd_topicos, codigo_openai
+        list: descricao, get_qtd_topicos
         view:
           fieldsets:
             dados_gerais: descricao
             topicos:
               actions: view, edit, delete
-              fields: descricao, codigo_openai
+              fields: descricao
               fieldsets: descricao
               related_field: assunto
     gv.topico:
@@ -80,11 +80,22 @@ api:
           fieldsets:
             dados_gerais: descricao
             arquivos:
-              actions: delete, edit
+              actions: delete
               fields: nome, arquivo, codigo_openai
               fieldsets: nome, arquivo
               related_field: topico
-    gv.conteudo:
+            perguntas_frequentes:
+              actions: view, edit, delete
+              fields: pergunta, resposta
+              fieldsets: pergunta, resposta
+              related_field: topico
+    gv.perguntafrequente:
+      icon: file-circle-question
+      endpoints:
+        list:
+          fields: topico, pergunta, resposta
+          requires:
+            especialista:
     gv.especialista:
       icon: user-check
       roles:
@@ -171,6 +182,8 @@ api:
             inteligencia_artificial:
               actions: gv.endpoints.consultarinteligenciaartificial
               fields: pergunta_ia, resposta_ia
+              requires:
+                especialista:
             dados_resposta:
               actions: gv.endpoints.editarresposta, gv.endpoints.enviarresposta
               fields: especialista data_resposta, resposta, observacao

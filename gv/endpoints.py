@@ -23,7 +23,7 @@ class VideoChamada(endpoints.Endpoint):
         return WebConf(self.user.username, receiver)
 
     def check_permission(self):
-        usernames = [self.instance.consultante.cpf, self.instance.especialista.cpf]
+        usernames = [self.instance.consultante.cpf, self.instance.especialista and self.instance.especialista.cpf]
         return self.instance.especialista and self.user.username in usernames
 
 
@@ -55,19 +55,13 @@ class ConsultarInteligenciaArtificial(endpoints.Endpoint):
         fields = 'pergunta_ia',
 
     def post(self):
-        openai.api_key = os.environ.get('CHATGBT_TOKEN')
-        response = openai.ChatCompletion.create(
-            model='gpt-3.5-turbo',
-            messages=[{"role": "user", "content": self.instance.pergunta_ia}],
-            temperature=0, max_tokens=150
-        )
         self.instance.data_consulta = datetime.datetime.now()
-        self.instance.resposta_ia = response['choices'][0]['message']['content']
+        self.instance.resposta_ia = self.instance.topico.perguntar_inteligencia_artificial(self.instance.pergunta_ia)
         self.instance.save()
         self.notify()
 
     def check_permission(self):
-        return self.instance.especialista_id and self.instance.resposta is None and self.check_roles('especialista')
+        return self.instance.especialista_id and self.instance.data_resposta is None and self.check_roles('especialista')
 
 
 class EditarResposta(endpoints.Endpoint):
