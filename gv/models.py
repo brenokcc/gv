@@ -1,17 +1,20 @@
+import os
+from openai import OpenAI
 from django.db import models
 from api.components import Badge, Steps
 from api.models import PushSubscription
 
 
-class TipoContrato(models.Model):
-    descricao = models.CharField('Descrição')
+class Estado(models.Model):
+    sigla = models.CharField('Sigla')
+    nome = models.CharField('Nome')
 
     class Meta:
-        verbose_name = 'Tipo de Contrato'
-        verbose_name_plural = 'Tipos de Contrato'
+        verbose_name = 'Estado'
+        verbose_name_plural = 'Estados'
 
     def __str__(self):
-        return self.descricao
+        return self.sigla
 
 
 class Prioridade(models.Model):
@@ -44,11 +47,12 @@ class Assunto(models.Model):
 
     def get_qtd_topicos(self):
         return self.topicos.count()
-
+    
 
 class Topico(models.Model):
     assunto = models.ForeignKey(Assunto, verbose_name='Assunto', related_name='topicos')
     descricao = models.CharField('Descrição')
+    codigo_openai = models.CharField('Código', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Tópico'
@@ -56,6 +60,51 @@ class Topico(models.Model):
 
     def __str__(self):
         return '{} - {}'.format(self.assunto, self.descricao)
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.codigo_openai is None:
+            client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
+            assistant = client.beta.assistants.create(
+                name='AnalisaRN {} - {}'.format(self.assunto, self.descricao),
+                instructions="",
+                tools=[{"type": "retrieval"}],
+                model="gpt-3.5-turbo-1106"
+            )
+            self.codigo_openai = assistant.id
+        
+
+
+class Arquivo(models.Model):
+    topico = models.ForeignKey(Topico, verbose_name='Tópico', related_name='arquivos', null=True)
+    nome = models.CharField('Nome')
+    arquivo = models.FileField('Arquivo', upload_to='arquivos', null=True)
+    codigo_openai = models.CharField('Código', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Arquivo'
+        verbose_name_plural = 'Arquivos'
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.codigo_openai is None:
+            client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
+            with open(self.arquivo.path, 'rb') as file:
+                uploaded_file = client.files.create(file=file, purpose='assistants')
+                assistant_file = client.beta.assistants.files.create(
+                    assistant_id=self.topico.codigo_openai, file_id=uploaded_file.id
+                )
+                self.codigo_openai = assistant_file.id
+                super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        if self.codigo_openai:
+            client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
+            client.beta.assistants.files.delete(
+                file_id=self.codigo_openai, assistant_id=self.topico.codigo_openai
+            )
+            client.files.delete(self.codigo_openai)
 
 
 class Conteudo(models.Model):
@@ -74,7 +123,14 @@ class Conteudo(models.Model):
 class Especialista(models.Model):
     cpf = models.CharField('CPF')
     nome = models.CharField('Nome')
+    registro = models.CharField('Nº do Registro Profissional', null=True, blank=True)
+    minicurriculo = models.TextField('Minicurrículo', null=True, blank=True) 
+    endereco = models.CharField('Endereço', null=True, blank=True)
+    telefone = models.CharField('Telefone', null=True, blank=True)
+    email = models.CharField('E-mail', null=True, blank=True)
+    estados = models.ManyToManyField(Estado, verbose_name='Estados', pick=True)
     assuntos = models.ManyToManyField(Assunto, verbose_name='Assuntos', pick=True)
+    
 
     class Meta:
         verbose_name = 'Especialista'
@@ -94,7 +150,8 @@ class Cliente(models.Model):
     nome_responsavel = models.CharField('Nome do Responsável')
     cargo_responsavel = models.CharField('Cargo do Responsável')
 
-    tipo_contrato = models.ForeignKey(TipoContrato, verbose_name='Tipo de Contrato')
+    estado = models.ForeignKey(Estado, verbose_name='Estado', null=True)
+    assuntos = models.ManyToManyField(Assunto, verbose_name='Assuntos', blank=True)
     ativo = models.BooleanField('Ativo', default=True)
 
     class Meta:
@@ -103,6 +160,7 @@ class Cliente(models.Model):
 
     def __str__(self):
         return '{} ({})'.format(self.nome, self.cpf_cnpj)
+
 
 
 class Consultante(models.Model):
@@ -180,6 +238,28 @@ class Consulta(models.Model):
             texto = 'Nova pergunta sobre "{}" cadastrada pelo cliente "{}".'.format(self.topico, self.consultante.cliente)
             for subscription in PushSubscription.objects.filter(user__username__in=cpfs):
                 subscription.notify(texto)
+
+
+class Anexo(models.Model):
+    consulta = models.ForeignKey(Consulta, verbose_name='Consulta', related_name='anexos')
+    nome = models.CharField('Nome')
+    observacao = models.TextField('Observação')
+    data_hora = models.DateTimeField(auto_now_add=True)
+    arquivo = models.FileField('Arquivo', upload_to='anexos', null=True)
+
+    class Meta:
+        verbose_name = 'Anexo'
+        verbose_name_plural = 'Anexos'
+
+
+class Interacao(models.Model):
+    consulta = models.ForeignKey(Consulta, verbose_name='Consulta', related_name='interacoes')
+    mensagem = models.CharField('Mensagem')
+    data_hora = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Interação'
+        verbose_name_plural = 'Interações'
 
 
 class Mensalidade(models.Model):

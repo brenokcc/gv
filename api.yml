@@ -60,27 +60,29 @@ api:
         list:
           fields: id, name, get_scope_value, active
           actions: view, edit
-    gv.tipocontrato:
+    gv.estado:
     gv.prioridade:
     gv.assunto:
       icon: file-circle-plus
       endpoints:
-        list: descricao, get_qtd_topicos
+        list: descricao, get_qtd_topicos, codigo_openai
         view:
           fieldsets:
             dados_gerais: descricao
             topicos:
               actions: view, edit, delete
-              fields: descricao
+              fields: descricao, codigo_openai
+              fieldsets: descricao
               related_field: assunto
     gv.topico:
       endpoints:
         view:
           fieldsets:
             dados_gerais: descricao
-            conteudos:
-              fields: descricao
-              fieldsets: descricao, texto
+            arquivos:
+              actions: delete, edit
+              fields: nome, arquivo, codigo_openai
+              fieldsets: nome, arquivo
               related_field: topico
     gv.conteudo:
     gv.especialista:
@@ -88,13 +90,27 @@ api:
       roles:
         especialista:
           username: cpf
+      endpoints:
+        list: cpf, nome, estados, assuntos
+        add:
+          fieldsets:
+            dados_pessoais: cpf nome
+            dados_profissionais: registro, minicurriculo
+            contato: telefone email
+            atuacao: estados, assuntos 
+        view:
+          fieldsets:
+            dados_pessoais: cpf nome
+            dados_profissionais: registro, minicurriculo
+            contato: telefone email
+            atuacao: estados, assuntos 
     gv.cliente:
       icon: contact-book
       endpoints:
-        list: cpf_cnpj, nome, tipo_contrato, cpf_responsavel, nome_responsavel, cargo_responsavel
+        list: cpf_cnpj, nome, estado, cpf_responsavel, nome_responsavel, cargo_responsavel
         add:
           fieldsets:
-            dados_gerais: cpf_cnpj nome, tipo_contrato
+            dados_gerais: cpf_cnpj nome, estado
             contato: endereco telefone
             responsavel: cpf_responsavel nome_responsavel cargo_responsavel
         view:
@@ -113,6 +129,9 @@ api:
               fields: valor, data_vencimento, data_pagamento
               fieldsets: valor, data_vencimento
     gv.mensalidade:
+    gv.anexo:
+    gv.arquivo:
+    gv.interacao:
     gv.consultante:
       roles:
         consultante:
@@ -140,10 +159,18 @@ api:
             get_passos:
             dados_gerais:
               actions: gv.endpoints.assumirconsulta
-              fields: consultante, topico prioridade
+              fields: consultante data_pergunta, topico prioridade, pergunta
+            anexos:
+              fields: nome, data_hora, arquivo
+              fieldsets: nome, arquivo
+              related_field: consulta
+            interacoes:
+              fields: mensagem, data_hora
+              fieldsets: mensagem
+              related_field: consulta
             inteligencia_artificial:
               actions: gv.endpoints.consultarinteligenciaartificial
               fields: pergunta_ia, resposta_ia
-            detalhamento:
+            dados_resposta:
               actions: gv.endpoints.editarresposta, gv.endpoints.enviarresposta
-              fields: data_pergunta especialista data_resposta, pergunta, resposta, observacao
+              fields: especialista data_resposta, resposta, observacao
