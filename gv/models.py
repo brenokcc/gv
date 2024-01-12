@@ -87,8 +87,7 @@ class Topico(models.Model):
             time.sleep(1)
             run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
         messages = client.beta.threads.messages.list(thread_id=thread.id)
-        breakpoint()
-        return messages.data[0].content[0].text.value#.replace('【9†source】', '')
+        return messages.data[0].content[0].text.value.replace('【9†source】', '')
 
 
 class Arquivo(models.Model):
