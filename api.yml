@@ -30,6 +30,11 @@ api:
         list:
           fields: user, device
           actions: api.endpoints.pushnotification, delete
+    api.email:
+        icon: mail-bulk
+        endpoints:
+          list:
+            actions: gv.endpoints.enviaremailacesso
     auth.user:
       prefix: users
       icon: user-pen
@@ -118,17 +123,17 @@ api:
     gv.cliente:
       icon: contact-book
       endpoints:
-        list: cpf_cnpj, nome, estado, cpf_responsavel, nome_responsavel, cargo_responsavel
+        list: cpf_cnpj, nome, estado, cpf_responsavel nome_responsavel
         add:
           fieldsets:
             dados_gerais: cpf_cnpj nome, estado
             contato: endereco telefone
-            responsavel: cpf_responsavel nome_responsavel cargo_responsavel
+            responsavel: cpf_responsavel nome_responsavel, email_responsavel cargo_responsavel
         view:
           fieldsets:
             dados_gerais: cpf_cnpj nome
             contato: endereco telefone
-            responsavel: cpf_responsavel nome_responsavel cargo_responsavel
+            responsavel: cpf_responsavel nome_responsavel, email_responsavel cargo_responsavel
             consultantes:
               actions: edit, delete
               fields: cpf, nome

@@ -169,6 +169,7 @@ class Cliente(models.Model):
     cpf_responsavel = models.CharField('CPF do Responsável')
     nome_responsavel = models.CharField('Nome do Responsável')
     cargo_responsavel = models.CharField('Cargo do Responsável')
+    email_responsavel = models.EmailField('E-mail', null=True)
 
     estado = models.ForeignKey(Estado, verbose_name='Estado', null=True)
     assuntos = models.ManyToManyField(Assunto, verbose_name='Assuntos', blank=True)
@@ -180,8 +181,16 @@ class Cliente(models.Model):
 
     def __str__(self):
         return '{} ({})'.format(self.nome, self.cpf_cnpj)
-
-
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        consultante = Consultante.objects.filter(cpf=self.cpf_responsavel).first()
+        if consultante is None:
+            consultante = Consultante()
+            consultante.cliente = self
+            consultante.cpf = self.cpf_responsavel
+            consultante.nome = self.nome_responsavel
+            consultante.save()
 
 class Consultante(models.Model):
     cliente = models.ForeignKey(Cliente, verbose_name='Cliente', related_name='consultantes')

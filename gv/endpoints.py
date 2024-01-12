@@ -7,6 +7,27 @@ from api.models import PushSubscription
 import openai
 
 
+class EnviarEmailAcesso(endpoints.Endpoint):
+    email = endpoints.EmailField(label='E-mail')
+    
+    class Meta:
+        icon = 'mail-bulk'
+        title = 'Enviar E-mail de Acesso'
+        target =  'queryset'
+
+    def post(self):
+        email = self.getdata('email')
+        user = self.objects('auth.user').filter(email=email).first()
+        if user is None:
+            raise endpoints.ValidationError('Usuário não cadastrado.')
+        user.set_password('123')
+        user.save()
+        self.objects('api.email').send(email, 'Senha de Acesso', 'Querido(a) cliente, sua senha de acesso ao sistema de consultoria online da AnalisaRN é "{}".'.format('123'))
+        self.notify('E-mail enviado com sucesso')
+
+    def check_permission(self):
+        return self.user.is_superuser
+
 class VideoChamada(endpoints.Endpoint):
 
     class Meta:

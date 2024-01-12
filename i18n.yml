@@ -8,8 +8,13 @@ Edit: Editar
 Groups: Grupos
 Append: Adicionar
 First Name: Primeiro Nome
-Append: Adicionar
 Description: Descrição
 User Roles: Papéis
 Username: Login
 Scope Value: Escopo
+From Email: Remetente
+To: Para
+Subject: Assunto
+Content: Conteúdo
+Sent At: Enviado Em
+Interacoes: Interações

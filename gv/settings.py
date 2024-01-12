@@ -125,3 +125,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 from api.conf import *
 DEFAULT_PASSWORD = lambda user: "123"
+
+if 'SMTP_EMAIL' in os.environ:
+    SERVER_EMAIL = os.environ['SMTP_EMAIL']
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_USE_TLS = True
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_HOST_USER = os.environ['SMTP_EMAIL']
+    EMAIL_HOST_PASSWORD = os.environ['SMTP_PASSWORD']
+    EMAIL_PORT = 587
